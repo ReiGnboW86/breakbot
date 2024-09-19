@@ -16,14 +16,14 @@ USAGE MANUAL:
 
 # COMMANDS #
 
-!start_break #:
+!start_break #
 
 Starts a countdown for a break. The # specifies how long the break should last.
 The bot will send a message saying when the break starts and how long it will last, and will send warnings when there are 2 minutes and 30 seconds remaining.
 
 Example: !start_break 5 starts a 5-minute break.
 
-!stop:
+!stop
 
 Stops the current break timer.
 This command allows you to cancel the countdown and send a message that the break was stopped early.
@@ -31,7 +31,7 @@ This command allows you to cancel the countdown and send a message that the brea
 Example: !stop
 
 
-!lastbreak:
+!lastbreak
 
 Displays information about the last break taken, such as how long the break lasted and when it ended.
 
