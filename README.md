@@ -7,14 +7,14 @@ This is a discord bot that manages breaks in our class and keeps track of previo
 
 My first real project since starting my education, hope it will come of use for many after I'm satisfied with the result.
 
-# USAGE MANUAL:
+USAGE MANUAL
 
 1. Create at text channel in your discord server named breakbot.
 2. Edit which user should have permission to control the bot in the code of 'breakbot.py' on line 19
 3. Invite the bot to your discord server and place it in the channel breakbot.
 4. The user with permission has access to these commands:
 
-## COMMANDS
+# COMMANDS
 
 # !start_break #
 
