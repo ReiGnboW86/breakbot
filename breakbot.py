@@ -1,10 +1,14 @@
+import json
 from discord.ext import commands
 import discord
 from datetime import timedelta
 from dataclasses import dataclass
 
-# Placeholder for token
-# Placeholder for channel
+with open("botkey.json") as config_file:
+    config = json.load(config_file)
+
+BOT_TOKEN = config["BOT_TOKEN"]
+CHANNEL_ID = config["CHANNEL_ID"]
 
 @dataclass
 class Session:
