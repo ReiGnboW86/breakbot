@@ -3,8 +3,8 @@ import discord
 from datetime import timedelta
 from dataclasses import dataclass
 
-# BOT_TOKEN = "token"
-# CHANNEL_ID = "channel_id"
+# Placeholder for token
+# Placeholder for channel
 
 @dataclass
 class Session:
