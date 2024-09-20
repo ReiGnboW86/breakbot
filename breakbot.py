@@ -3,8 +3,8 @@ import discord
 from datetime import timedelta
 from dataclasses import dataclass
 
-BOT_TOKEN = "MTI4NjU5MTcyODg2NTc3NTY0Ng.Gc7zIO.Lw1hEjPgNmDHRLlR5lBS5P9KulhIKpJj55gaOg"
-CHANNEL_ID = 1286388858564378654
+# BOT_TOKEN = "token"
+# CHANNEL_ID = "channel_id"
 
 @dataclass
 class Session:
