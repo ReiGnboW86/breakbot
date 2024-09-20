@@ -14,14 +14,14 @@ USAGE MANUAL
 3. Invite the bot to your discord server and place it in the channel breakbot.
 4. The user with permission has access to these commands:
 
-# COMMANDS
+# FUTURE COMMANDS
 
-# !start_break #
+# !break #
 
 Starts a countdown for a break. The # specifies how long the break should last.
 The bot will send a message saying when the break starts and how long it will last, and will send warnings when there are 2 minutes and 30 seconds remaining.
 
-Example: !start_break 5 starts a 5-minute break.
+Example: !break 5 starts a 5-minute break.
 
 # !stop
 
