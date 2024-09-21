@@ -6,11 +6,11 @@ from dataclasses import dataclass
 import asyncio
 from dotenv import load_dotenv
 
-load_dotenv() # Loads enviroment variables from .env instead of .json in previous version
+load_dotenv()  # Loads environment variables from .env
 
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 if BOT_TOKEN is None:
-    raise ValueError("No BOT_TOKEN found in enviroment variables")
+    raise ValueError("No BOT_TOKEN found in environment variables")
 
 @dataclass
 class Session:
@@ -34,39 +34,56 @@ async def on_ready():
     print(f"{bot.user.name} has connected to Discord!")
 
 async def countdown(ctx, session):
-    duration = int((session.end_time - datetime.now()).total_seconds())
-    message = await ctx.send(f"Break active: {duration//60:02d}:{duration%60:02d}, be back at: {session.end_time.strftime('%H:%M')}")
-
-    warned_two_minutes = False
-    warned_thirty_seconds = False
-
-    while duration > 0:
-        if not session.is_active:
-            # If the session was manually stopped, break out of the loop
-            break
-
-        await asyncio.sleep(5)  # Update every 5 seconds
+    try:
         duration = int((session.end_time - datetime.now()).total_seconds())
-        minutes, seconds = divmod(duration, 60)
+        message = await ctx.send(f"Break active: {duration//60:02d}:{duration%60:02d}, be back at: {session.end_time.strftime('%H:%M')}")
 
-        # Warn when 2 minutes are left
-        if 0 < duration <= 120 and not warned_two_minutes:
-            await ctx.send("@everyone 2 minutes left of the break.")
-            warned_two_minutes = True
+        warned_two_minutes = False
+        warned_thirty_seconds = False
 
-        # Warn when 30 seconds are left
-        if 0 < duration <= 30 and not warned_thirty_seconds:
-            await ctx.send("@everyone Warning! Last 30 seconds of the break.")
-            warned_thirty_seconds = True
+        while duration > 0:
+            if not session.is_active:
+                # If the session was manually stopped, break out of the loop
+                break
 
-        # Update the countdown message
-        await message.edit(content=f"Break active: {minutes:02d}:{seconds:02d}, be back at: {session.end_time.strftime('%H:%M')}")
+            await asyncio.sleep(5)  # Update every 5 seconds
+            duration = int((session.end_time - datetime.now()).total_seconds())
+            minutes, seconds = divmod(duration, 60)
 
-    if session.is_active:
-        await ctx.send(f"Break is over! It's {session.end_time.strftime('%H:%M')}. Time to work")
-        # Record the last break info
-        session.last_break_end_time = session.end_time
-        session.last_break_duration = int((session.end_time - datetime.fromtimestamp(session.start_time)).total_seconds())
+            # Warn when 2 minutes are left
+            if 0 < duration <= 120 and not warned_two_minutes:
+                if ctx.guild.me.guild_permissions.mention_everyone:
+                    await ctx.send("@everyone 2 minutes left of the break.")
+                else:
+                    await ctx.send("2 minutes left of the break.")
+                warned_two_minutes = True
+
+            # Warn when 30 seconds are left
+            if 0 < duration <= 30 and not warned_thirty_seconds:
+                if ctx.guild.me.guild_permissions.mention_everyone:
+                    await ctx.send("@everyone Warning! Last 30 seconds of the break.")
+                else:
+                    await ctx.send("Warning! Last 30 seconds of the break.")
+                warned_thirty_seconds = True
+
+            # Update the countdown message
+            try:
+                await message.edit(content=f"Break active: {minutes:02d}:{seconds:02d}, be back at: {session.end_time.strftime('%H:%M')}")
+            except discord.NotFound:
+                # The message was deleted, send a new one
+                message = await ctx.send(f"Break active: {minutes:02d}:{seconds:02d}, be back at: {session.end_time.strftime('%H:%M')}")
+
+        if session.is_active:
+            if ctx.guild.me.guild_permissions.mention_everyone:
+                await ctx.send(f"@everyone Break is over! It's {session.end_time.strftime('%H:%M')}. Time to work!")
+            else:
+                await ctx.send(f"Break is over! It's {session.end_time.strftime('%H:%M')}. Time to work!")
+            # Record the last break info
+            session.last_break_end_time = session.end_time
+            session.last_break_duration = int((session.end_time - datetime.fromtimestamp(session.start_time)).total_seconds())
+            session.is_active = False
+    except Exception as e:
+        await ctx.send(f"An error occurred during the countdown: {e}")
         session.is_active = False
 
 @bot.command()
@@ -83,7 +100,7 @@ async def start(ctx, end_time: str):
 
     # Parsing the provided end time (HH:MM)
     try:
-        end_hour, end_minute = map(int, end_time.split(":"))
+        end_hour, end_minute = map(int, end_time.strip().split(":"))
         if not (0 <= end_hour <= 23 and 0 <= end_minute <= 59):
             raise ValueError
 
@@ -104,13 +121,16 @@ async def start(ctx, end_time: str):
         break_minutes = session.break_duration // 60
 
         human_readable_time = now.strftime("%H:%M")
-        await ctx.send(f"@everyone Break started at: {human_readable_time}. Break will be around {break_minutes} minutes. Be back at: {session.end_time.strftime('%H:%M')}.")
+        if ctx.guild.me.guild_permissions.mention_everyone:
+            await ctx.send(f"@everyone Break started at: {human_readable_time}. Break will be around {break_minutes} minutes. Be back at: {session.end_time.strftime('%H:%M')}.")
+        else:
+            await ctx.send(f"Break started at: {human_readable_time}. Break will be around {break_minutes} minutes. Be back at: {session.end_time.strftime('%H:%M')}.")
 
         # Start the countdown
         await countdown(ctx, session)
 
-    except ValueError:
-        await ctx.send("Wrong format! Use HH:MM, e.g., !start 14:20.")
+    except Exception:
+        await ctx.send("Invalid time format! Please use HH:MM in 24-hour format, e.g., !start 14:20.")
 
 @bot.command()
 @commands.has_permissions(manage_guild=True)
@@ -179,10 +199,11 @@ async def on_command_error(ctx, error):
     if isinstance(error, commands.MissingPermissions):
         await ctx.send("You don't have permission to use this command.")
     elif isinstance(error, commands.CommandInvokeError):
-        # Handle specific invoke errors if needed
-        await ctx.send(f"An error occurred: {error.original}")
+        if isinstance(error.original, discord.Forbidden):
+            await ctx.send("I don't have the necessary permissions to perform that action.")
+        else:
+            await ctx.send(f"An unexpected error occurred: {error.original}")
     else:
         await ctx.send(f"An error occurred: {error}")
 
-# Replace 'YOUR_BOT_TOKEN' with your actual bot token
-bot.run('YOUR_BOT_TOKEN')
+bot.run(BOT_TOKEN)
