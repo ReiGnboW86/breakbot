@@ -34,3 +34,17 @@ Example: !stop
 Displays information about the last break taken, such as how long the break lasted and when it ended.
 
 Example: !last
+
+# Current thoughts
+
+Add check for which timezone to be used (either discord server, server manager, or individial)
+
+Add a specific message if a break is longer than X minutes to make it a lunch break
+
+Changing formatting of longer times (over 60 minutes) to show HH:MM:SS remaining instead of just MM:SS
+
+Help command to display how to use the bot (other than github information)
+
+Persistent data storage for sessions (not sure we need this)
+
+If you have any suggestions for functionality you would like to see, Please send me a message :)
