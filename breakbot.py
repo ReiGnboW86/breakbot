@@ -1,9 +1,16 @@
-import json
+import os
 from discord.ext import commands
 import discord
 from datetime import datetime, timedelta
 from dataclasses import dataclass
 import asyncio
+from dotenv import load_dotenv
+
+load_dotenv() # Loads enviroment variables from .env instead of .json in previous version
+
+BOT_TOKEN = os.getenv('BOT_TOKEN')
+if BOT_TOKEN is None:
+    raise ValueError("No BOT_TOKEN found in enviroment variables")
 
 @dataclass
 class Session:
