@@ -35,7 +35,15 @@ Displays information about the last break taken, such as how long the break last
 
 Example: !last
 
+# Latest Updates
+
+Changed the prompt language from Swedish to English (maybe I should setup some form of localization for global use)
+
+Manages the key to use .env instead of .json
+
 # Current thoughts
+
+Fix so that the bot doesn't require admin priviliges (important)
 
 Add check for which timezone to be used (either discord server, server manager, or individial)
 
