@@ -77,7 +77,7 @@ async def countdown(ctx, session):
             if ctx.guild.me.guild_permissions.mention_everyone:
                 await ctx.send(f"@everyone Break is over! It's {session.end_time.strftime('%H:%M')}. Time to work!")
             else:
-                await ctx.send(f"Break is over! It's {session.end_time.strftime('%H:%M')}. Time to work!")
+                await ctx.send(f"@everyone Break is over! It's {session.end_time.strftime('%H:%M')}. Time to work!")
             # Record the last break info
             session.last_break_end_time = session.end_time
             session.last_break_duration = int((session.end_time - datetime.fromtimestamp(session.start_time)).total_seconds())
