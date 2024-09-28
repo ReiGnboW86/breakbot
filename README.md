@@ -51,7 +51,7 @@ Fix so that the bot doesn't require admin priviliges (important)
 
 Add check for which timezone to be used (either discord server, server manager, or individial)
 
-Add a specific message if a break is longer than X minutes to make it a lunch break
+Add a specific message if a break is longer than 30 minutes to make it a lunch break (IMPLEMENTED)
 
 Changing formatting of longer times (over 60 minutes) to show HH:MM:SS remaining instead of just MM:SS
 
