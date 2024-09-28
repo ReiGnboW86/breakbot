@@ -193,6 +193,17 @@ async def last(ctx):
         human_readable_duration = ', '.join(duration_message)
         await ctx.send(f"Previous break ended at: {end_time_str} and lasted for {human_readable_duration}.")
 
+@bot.command()
+async def how(ctx):
+    how_to_message = """
+    **Break Bot Commands:**
+    `!start HH:MM` - Starts a break until the specified end time (24-hour format).
+    `!stop` - Stops the current break.
+    `!last` - Displays information about the last break.
+    `!how`  - Shows this message.
+    """
+    await ctx.send(how_to_message)
+
 # Error handling for commands
 @bot.event
 async def on_command_error(ctx, error):
