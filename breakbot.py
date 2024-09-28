@@ -86,6 +86,8 @@ async def countdown(ctx, session):
         await ctx.send(f"An error occurred during the countdown: {e}")
         session.is_active = False
 
+LUNCH_BREAK_TIME = 30 * 60 # 30 minutes in seconds
+
 @bot.command()
 @commands.has_permissions(manage_guild=True)  # Restrict to users with Manage Server permission
 async def start(ctx, end_time: str):
@@ -120,11 +122,16 @@ async def start(ctx, end_time: str):
         session.break_duration = int((session.end_time - now).total_seconds())
         break_minutes = session.break_duration // 60
 
+        if session.break_duration >= LUNCH_BREAK_TIME:
+            special_message = "`LUNCH BREAK`\n"
+        else:
+            special_message = ""
+
         human_readable_time = now.strftime("%H:%M")
         if ctx.guild.me.guild_permissions.mention_everyone:
-            await ctx.send(f"@everyone Break started at: {human_readable_time}. Break will be around {break_minutes} minutes. Be back at: {session.end_time.strftime('%H:%M')}.")
+            await ctx.send(f"@everyone {special_message} Break started at: {human_readable_time}. Break will be around {break_minutes} minutes. Be back at: {session.end_time.strftime('%H:%M')}.")
         else:
-            await ctx.send(f"Break started at: {human_readable_time}. Break will be around {break_minutes} minutes. Be back at: {session.end_time.strftime('%H:%M')}.")
+            await ctx.send(f"{special_message} Break started at: {human_readable_time}. Break will be around {break_minutes} minutes. Be back at: {session.end_time.strftime('%H:%M')}.")
 
         # Start the countdown
         await countdown(ctx, session)
