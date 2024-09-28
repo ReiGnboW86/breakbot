@@ -35,11 +35,15 @@ Displays information about the last break taken, such as how long the break last
 
 Example: !last
 
+# !how
+
+Displays all the commands available to the user, including this command.
+
+Example : !how
+
 # Latest Updates
 
-Changed the prompt language from Swedish to English (maybe I should setup some form of localization for global use)
-
-Manages the key to use .env instead of .json
+Added a command (!how) to show how to operate the bot for the user.
 
 # Current thoughts
 
@@ -51,7 +55,7 @@ Add a specific message if a break is longer than X minutes to make it a lunch br
 
 Changing formatting of longer times (over 60 minutes) to show HH:MM:SS remaining instead of just MM:SS
 
-Help command to display how to use the bot (other than github information)
+Help command to display how to use the bot (other than github information) (IMPLEMENTED)
 
 Persistent data storage for sessions (not sure we need this)
 
