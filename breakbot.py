@@ -225,7 +225,7 @@ async def last(ctx):
 
 @bot.command()
 async def how(ctx):
-    description = """
+    how_to_message = """
     **Break Bot Commands:**
     `!start HH:MM` - Starts a break until the specified end time (24-hour format).
     `!stop` - Stops the current break.
@@ -233,7 +233,7 @@ async def how(ctx):
     `!settimezone <Timezone>` - Sets the timezone for the server (admin only) Example: `!settimezone Europe/Stockholm`
     `!how`  - Shows this message.
     """
-    await ctx.send(description)
+    await ctx.send(how_to_message)
 
 @bot.command()
 @commands.has_permissions(manage_guild=True)
