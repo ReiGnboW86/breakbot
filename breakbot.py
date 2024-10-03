@@ -37,6 +37,59 @@ async def on_ready():
     print(f"{bot.user.name} has connected to Discord!")
     load_sessions()  # Load sessions when the bot starts
 
+@bot.event
+async def on_guild_join(guild):
+    # Check if a channel named 'breakbot' exists
+    channel = discord.utils.get(guild.text_channels, name='breakbot')
+
+    if not channel:
+        # The channel doesn't exist, attempt to create it
+        try:
+            overwrites = {
+                guild.default_role: discord.PermissionOverwrite(read_messages=True, send_messages=True),
+                guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True)
+            }
+            channel = await guild.create_text_channel('breakbot', overwrites=overwrites)
+            print(f"Created channel 'breakbot' in guild {guild.name}")
+        except discord.Forbidden:
+            print(f"Missing permissions to create channel in guild {guild.name}")
+            # Notify the server owner about missing permissions
+            if guild.owner:
+                try:
+                    await guild.owner.send(
+                        f"Hello! I tried to create a `#breakbot` channel in your server **{guild.name}**, "
+                        "but I don't have the necessary permissions. Please ensure I have the 'Manage Channels' "
+                        "permission, or create a text channel named `#breakbot` where I can send messages."
+                    )
+                except discord.Forbidden:
+                    print(f"Unable to send DM to the owner of guild {guild.name}")
+            return
+        except Exception as e:
+            print(f"An error occurred while creating channel in guild {guild.name}: {e}")
+            return
+
+    # Compose the welcome message
+    welcome_message = (
+        f"Hello! I'm **{bot.user.name}**, your break management bot.\n\n"
+        "To get started, please set the timezone for this server using the command:\n"
+        "`!settimezone <Timezone>`\n"
+        "Example: `!settimezone Europe/Stockholm`\n\n"
+        "Once the timezone is set, you can start a break using:\n"
+        "`!start HH:MM`\n"
+        "Example: `!start 14:30`\n\n"
+        "For more information on how to use the bot, type `!how`.\n"
+        "If you have any questions or need assistance, feel free to reach out on GitHub!\n"
+        "https://github.com/ReiGnboW86/breakbot"
+    )
+
+    # Send the welcome message in the 'breakbot' channel
+    try:
+        await channel.send(welcome_message)
+    except discord.Forbidden:
+        print(f"Unable to send message in {channel.name} of guild {guild.name}")
+    except Exception as e:
+        print(f"An error occurred while sending message in {channel.name} of guild {guild.name}: {e}")
+
 def format_duration(duration_seconds):
     if duration_seconds >= 3600:
         hours, remainder = divmod(duration_seconds, 3600)
@@ -80,7 +133,7 @@ async def countdown(ctx, session):
                 warned_two_minutes = True
 
             if 0 < duration <= 30 and not warned_thirty_seconds:
-                await ctx.send("@everyone\n `Warning! Last 30 seconds of the break.`")
+                await ctx.send("@everyone\n :warning: `Last 30 seconds of the break.` :warning:")
                 warned_thirty_seconds = True
 
             # Update the countdown message
@@ -287,19 +340,36 @@ async def settimezone(ctx, *, timezone_name: str = None):
             "You can find a full list of timezones here: <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>"
         )
 
-# Error handling for commands
+from discord.ext import commands
+
+# Define custom exception
+class WrongChannelError(commands.CheckFailure):
+    pass
+
+# Global check to restrict commands to #breakbot channel
+@bot.check
+async def globally_check_channel(ctx):
+    if ctx.channel.name != 'breakbot':
+        raise WrongChannelError(f"Please use commands in the #breakbot channel.")
+    return True
+
+# Error handling
 @bot.event
 async def on_command_error(ctx, error):
-    if isinstance(error, commands.MissingPermissions):
+    if isinstance(error, WrongChannelError):
+        await ctx.send(error)
+    elif isinstance(error, commands.MissingPermissions):
         await ctx.send("You don't have permission to use this command.")
     elif isinstance(error, commands.CommandInvokeError):
         if isinstance(error.original, discord.Forbidden):
             await ctx.send("I don't have the necessary permissions to perform that action.")
         else:
             await ctx.send(f"An unexpected error occurred: {error.original}")
+    elif isinstance(error, commands.CheckFailure):
+        # Ignore other check failures silently or handle as needed
+        pass
     else:
         await ctx.send(f"An error occurred: {error}")
-
 
 SESSION_FILE = "sessions.json"
 
@@ -336,5 +406,14 @@ def load_sessions():
                     last_break_duration=session_data.get("last_break_duration", 0),
                     timezone=ZoneInfo(timezone_name)
                 )
+# Define custom exception
+class WrongChannelError(commands.CheckFailure):
+    pass
+
+@bot.check
+async def globally_check_channel(ctx):
+    if ctx.channel.name != 'breakbot':
+        raise WrongChannelError(f"Please use commands in the #breakbot channel.")
+    return True
 
 bot.run(BOT_TOKEN)
