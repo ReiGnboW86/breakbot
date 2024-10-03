@@ -41,22 +41,32 @@ Displays all the commands available to the user, including this command.
 
 Example : !how
 
+# !settimezone
+
+Sets the timezone to whatever timezone you want the bot to operate in, and stores it for future use.
+
+Example: !settimezone Europe/Stockholm
+
 # Latest Updates
 
-Added a command (!how) to show how to operate the bot for the user.
+Worked a bunch on adding persistence with sessions per server in a separate json file.
+Implemented the possibility for the admin to set the timezone the Break Bot should operate in and store in the json.
+Wrote a few functions to format the time displays more neatly and make the correct calculations when going over an hour for diplay.
+Wrote alot of error handling for the timezones to display correctly.
+Updated requirements to include tzdata for timezones.
 
 # Current thoughts
 
-Fix so that the bot doesn't require admin priviliges (important)
+Fix so that the bot doesn't require admin priviliges (Next Week perhaps)
 
-Add check for which timezone to be used (either discord server, server manager, or individial)
+Add check for which timezone to be used (IMPLEMENTED, Admin Only)
 
 Add a specific message if a break is longer than 30 minutes to make it a lunch break (IMPLEMENTED)
 
-Changing formatting of longer times (over 60 minutes) to show HH:MM:SS remaining instead of just MM:SS
+Changing formatting of longer times (over 60 minutes) to show HH:MM:SS remaining instead of just MM:SS (IMPLEMENTED)
 
 Help command to display how to use the bot (other than github information) (IMPLEMENTED)
 
-Persistent data storage for sessions (not sure we need this)
+Persistent data storage for sessions (IMPLEMENTED)
 
 If you have any suggestions for functionality you would like to see, Please send me a message :)
