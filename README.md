@@ -10,7 +10,13 @@ My first real project since starting my education, hope it will come of use for 
 
 USAGE / INSTALLATION MANUAL
 
-In Progress *
+Invite Link:
+
+https://discord.com/oauth2/authorize?client_id=1286591728865775646
+
+# Bugs
+
+None I've found atm (please report if you find any)
 
 # COMMANDS (implemented)
 
@@ -54,6 +60,12 @@ Implemented the possibility for the admin to set the timezone the Break Bot shou
 Wrote a few functions to format the time displays more neatly and make the correct calculations when going over an hour for diplay.
 Wrote alot of error handling for the timezones to display correctly.
 Updated requirements to include tzdata for timezones.
+
+Implemented a welcome message with usage instructions, logic to create and manage a channel if it doesn't exist (#breakbot)
+
+Added invite link to readme for testing purposes
+
+Added check if commands are written in a different text channel then #breakbot
 
 # Current thoughts
 
