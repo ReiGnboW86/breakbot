@@ -14,6 +14,8 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 if BOT_TOKEN is None:
     raise ValueError("No BOT_TOKEN found in environment variables")
 
+BREAK_MANAGER_ROLE_NAME = "Supreme Break Commander"  # The desired role name
+
 @dataclass
 class Session:
     is_active: bool = False
@@ -27,6 +29,9 @@ class Session:
 
 intents = discord.Intents.default()
 intents.message_content = True
+intents.guilds = True
+intents.guild_messages = True
+intents.members = True  # Needed to manage roles and members
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 # Dictionary to store sessions per guild (server)
@@ -72,6 +77,7 @@ def get_welcome_message():
         "Once the timezone is set, you can start a break using:\n"
         "`!start HH:MM`\n"
         "Example: `!start 14:30`\n\n"
+        f"Admins can assign the `{BREAK_MANAGER_ROLE_NAME}` role to users using `!promote @user`.\n"
         "For more information on how to use the bot, type `!how`.\n"
         "If you have any questions or need assistance, feel free to reach out on GitHub!\n"
         "https://github.com/ReiGnboW86/breakbot"
@@ -125,6 +131,25 @@ async def on_guild_join(guild):
     # Send the welcome message in the 'breakbot' channel
     await send_welcome_message(channel)
 
+async def get_or_create_role(guild, role_name):
+    role = discord.utils.get(guild.roles, name=role_name)
+    if role is None:
+        try:
+            role = await guild.create_role(
+                name=role_name,
+                hoist=True,  # Display role members separately
+                mentionable=True,
+                permissions=discord.Permissions.none()
+            )
+            print(f"Created role '{role_name}' in guild {guild.name}")
+        except discord.Forbidden:
+            print(f"Missing permissions to create role in guild {guild.name}")
+            return None
+        except Exception as e:
+            print(f"An error occurred while creating role in guild {guild.name}: {e}")
+            return None
+    return role
+
 async def countdown(ctx, session):
     try:
         now = datetime.now(session.timezone)
@@ -171,8 +196,20 @@ async def countdown(ctx, session):
 
 LUNCH_BREAK_TIME = 30 * 60  # 30 minutes in seconds
 
+# Custom check to allow users with manage_guild permission or with the hardcoded role
+def has_control_permission():
+    async def predicate(ctx):
+        if ctx.author.guild_permissions.manage_guild:
+            return True
+        # Find the role by name
+        controller_role = discord.utils.get(ctx.guild.roles, name=BREAK_MANAGER_ROLE_NAME)
+        if controller_role and controller_role in ctx.author.roles:
+            return True
+        raise commands.MissingPermissions(["manage_guild"])
+    return commands.check(predicate)
+
 @bot.command()
-@commands.has_permissions(manage_guild=True)
+@has_control_permission()
 async def start(ctx, end_time: str):
     session = get_session(ctx)
 
@@ -198,7 +235,7 @@ async def start(ctx, end_time: str):
         session.start_time = now.timestamp()
         session.manually_ended = False
 
-        # Calculate the duration in minutes
+        # Calculate the duration in seconds
         session.break_duration = int((session.end_time - now).total_seconds())
         break_duration_formatted = format_human_readable_duration(session.break_duration)
 
@@ -225,7 +262,7 @@ async def start(ctx, end_time: str):
         await ctx.send(f"An error occurred while starting the break: {e}")
 
 @bot.command()
-@commands.has_permissions(manage_guild=True)
+@has_control_permission()
 async def stop(ctx):
     session = get_session(ctx)
     if not session.is_active:
@@ -259,18 +296,22 @@ async def last(ctx):
 
 @bot.command()
 async def how(ctx):
-    how_to_message = """
+    how_to_message = f"""
     **Break Bot Commands:**
     `!start HH:MM` - Starts a break until the specified end time (24-hour format).
     `!stop` - Stops the current break.
     `!last` - Displays information about the last break.
-    `!settimezone <Timezone>` - Sets the timezone for the server (admin only) Example: `!settimezone Europe/Stockholm`
+    `!settimezone <Timezone>` - Sets the timezone for the server (admin or users with the '{BREAK_MANAGER_ROLE_NAME}' role).
+    `!promote @user` - Assigns the '{BREAK_MANAGER_ROLE_NAME}' role to a user (admin only).
+    `!demote @user` - Removes the '{BREAK_MANAGER_ROLE_NAME}' role from a user (admin only).
     `!how`  - Shows this message.
+
+    **Note:** Users with the role `{BREAK_MANAGER_ROLE_NAME}` or administrators can control the bot.
     """
     await ctx.send(how_to_message)
 
 @bot.command()
-@commands.has_permissions(manage_guild=True)
+@has_control_permission()
 async def settimezone(ctx, *, timezone_name: str = None):
     if timezone_name is None:
         await ctx.send("Please specify a timezone. Example usage: `!settimezone Europe/Stockholm`.")
@@ -316,6 +357,51 @@ async def settimezone(ctx, *, timezone_name: str = None):
             f"{timezone_list}\n"
             "You can find a full list of timezones here: <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>"
         )
+
+@bot.command()
+@commands.has_permissions(manage_guild=True)
+async def promote(ctx, member: discord.Member = None):
+    if member is None:
+        await ctx.send("Please mention a user to assign the role. Example usage: `!promote @user`.")
+        return
+
+    # Get or create the role
+    role = await get_or_create_role(ctx.guild, BREAK_MANAGER_ROLE_NAME)
+    if role is None:
+        await ctx.send(f"Could not create or find the role `{BREAK_MANAGER_ROLE_NAME}`.")
+        return
+
+    try:
+        await member.add_roles(role)
+        await ctx.send(f"Assigned the role `{role.name}` to {member.mention}.")
+    except discord.Forbidden:
+        await ctx.send("I do not have permission to assign roles.")
+    except Exception as e:
+        await ctx.send(f"An error occurred while assigning the role: {e}")
+
+@bot.command()
+@commands.has_permissions(manage_guild=True)
+async def demote(ctx, member: discord.Member = None):
+    if member is None:
+        await ctx.send("Please mention a user to remove the role. Example usage: `!demote @user`.")
+        return
+
+    role = discord.utils.get(ctx.guild.roles, name=BREAK_MANAGER_ROLE_NAME)
+    if role is None:
+        await ctx.send(f"The role `{BREAK_MANAGER_ROLE_NAME}` does not exist.")
+        return
+
+    if role not in member.roles:
+        await ctx.send(f"{member.mention} does not have the `{BREAK_MANAGER_ROLE_NAME}` role.")
+        return
+
+    try:
+        await member.remove_roles(role)
+        await ctx.send(f"Removed the role `{role.name}` from {member.mention}.")
+    except discord.Forbidden:
+        await ctx.send("I do not have permission to remove roles.")
+    except Exception as e:
+        await ctx.send(f"An error occurred while removing the role: {e}")
 
 # Global check to restrict commands to #breakbot channel
 @bot.check
@@ -379,7 +465,7 @@ def load_sessions():
                     manually_ended=session_data.get("manually_ended", False),
                     last_break_end_time=datetime.fromtimestamp(session_data["last_break_end_time"], tz=ZoneInfo(timezone_name)) if session_data.get("last_break_end_time") else None,
                     last_break_duration=session_data.get("last_break_duration", 0),
-                    timezone=ZoneInfo(timezone_name)
+                    timezone=ZoneInfo(timezone_name),
                 )
 
 bot.run(BOT_TOKEN)
