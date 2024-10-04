@@ -55,19 +55,17 @@ Example: !settimezone Europe/Stockholm
 
 # Latest Updates
 
-Worked a bunch on adding persistence with sessions per server in a separate json file.
-Implemented the possibility for the admin to set the timezone the Break Bot should operate in and store in the json.
-Wrote a few functions to format the time displays more neatly and make the correct calculations when going over an hour for diplay.
-Wrote alot of error handling for the timezones to display correctly.
-Updated requirements to include tzdata for timezones.
-
-Implemented a welcome message with usage instructions, logic to create and manage a channel if it doesn't exist (#breakbot)
-
-Added invite link to readme for testing purposes
-
-Added check if commands are written in a different text channel then #breakbot
+Rewrote alot of the code, optimizing it. Requires more testing to make sure all functions are working as intended now.
 
 # Current thoughts
+
+Add a custom role for Amanda to control the bot aswell (Överbefälrastare / Supreme Break Commander) (goes hand in hand with fixing rights)
+
+Ask for input from the user if the break is over 30 minutes to confirm its a lunch break or not, otherwise default to normal break
+
+Add the possibility to choose between a task or a break when starting a timer (taskbot?!)
+
+Add some fun emojis to the messages to make it look more playful
 
 Fix so that the bot doesn't require admin priviliges (Next Week perhaps)
 
