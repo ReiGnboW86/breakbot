@@ -53,13 +53,24 @@ Sets the timezone to whatever timezone you want the bot to operate in, and store
 
 Example: !settimezone Europe/Stockholm
 
+# !promote @username
+
+Sets the targeted user to be a Supreme Break Commander, giving them the rights to use the !start, !stop and !settimezone commands.
+
+Example: !promote @Amanda
+
+# !demote @username
+
+Removes the targeted user from its role as a Supreme Break Commander, demoting them to a regular human being again.
+
 # Latest Updates
 
 Rewrote alot of the code, optimizing it. Requires more testing to make sure all functions are working as intended now.
+Added the !setcommander @username command to be able to assign Break Operators other than the admin
 
 # Current thoughts
 
-Add a custom role for Amanda to control the bot aswell (Överbefälrastare / Supreme Break Commander) (goes hand in hand with fixing rights)
+Add a custom role for Amanda to control the bot aswell (Supreme Break Commander) (Implemented)
 
 Ask for input from the user if the break is over 30 minutes to confirm its a lunch break or not, otherwise default to normal break
 
@@ -68,15 +79,5 @@ Add the possibility to choose between a task or a break when starting a timer (t
 Add some fun emojis to the messages to make it look more playful
 
 Fix so that the bot doesn't require admin priviliges (Next Week perhaps)
-
-Add check for which timezone to be used (IMPLEMENTED, Admin Only)
-
-Add a specific message if a break is longer than 30 minutes to make it a lunch break (IMPLEMENTED)
-
-Changing formatting of longer times (over 60 minutes) to show HH:MM:SS remaining instead of just MM:SS (IMPLEMENTED)
-
-Help command to display how to use the bot (other than github information) (IMPLEMENTED)
-
-Persistent data storage for sessions (IMPLEMENTED)
 
 If you have any suggestions for functionality you would like to see, Please send me a message :)
