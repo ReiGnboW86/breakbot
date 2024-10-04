@@ -1,12 +1,12 @@
 import os
-from discord.ext import commands
+import json
+import asyncio
 import discord
 from datetime import datetime, timedelta
 from dataclasses import dataclass
-import asyncio
-from dotenv import load_dotenv
 from zoneinfo import ZoneInfo
-import json
+from discord.ext import commands
+from dotenv import load_dotenv
 
 load_dotenv()  # Loads environment variables from .env
 
@@ -31,6 +31,60 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 # Dictionary to store sessions per guild (server)
 sessions = {}
+
+def get_session(ctx):
+    guild_id = ctx.guild.id
+    if guild_id not in sessions:
+        sessions[guild_id] = Session()
+    return sessions[guild_id]
+
+def format_human_readable_duration(seconds):
+    intervals = (
+        ('hour', 3600),
+        ('minute', 60),
+        ('second', 1),
+    )
+    result = []
+    for name, count in intervals:
+        value = seconds // count
+        if value > 0:
+            seconds -= value * count
+            result.append(f"{int(value)} {name}{'s' if value != 1 else ''}")
+    if not result:
+        return "0 seconds"
+    else:
+        return ', '.join(result)
+
+def format_duration(duration_seconds):
+    hours, remainder = divmod(duration_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    if hours > 0:
+        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+    else:
+        return f"{minutes:02d}:{seconds:02d}"
+
+def get_welcome_message():
+    return (
+        f"Hello! I'm **{bot.user.name}**, your break management bot.\n\n"
+        "To get started, please set the timezone for this server using the command:\n"
+        "`!settimezone <Timezone>`\n"
+        "Example: `!settimezone Europe/Stockholm`\n\n"
+        "Once the timezone is set, you can start a break using:\n"
+        "`!start HH:MM`\n"
+        "Example: `!start 14:30`\n\n"
+        "For more information on how to use the bot, type `!how`.\n"
+        "If you have any questions or need assistance, feel free to reach out on GitHub!\n"
+        "https://github.com/ReiGnboW86/breakbot"
+    )
+
+async def send_welcome_message(channel):
+    welcome_message = get_welcome_message()
+    try:
+        await channel.send(welcome_message)
+    except discord.Forbidden:
+        print(f"Unable to send message in {channel.name}")
+    except Exception as e:
+        print(f"An error occurred while sending message in {channel.name}: {e}")
 
 @bot.event
 async def on_ready():
@@ -68,47 +122,8 @@ async def on_guild_join(guild):
             print(f"An error occurred while creating channel in guild {guild.name}: {e}")
             return
 
-    # Compose the welcome message
-    welcome_message = (
-        f"Hello! I'm **{bot.user.name}**, your break management bot.\n\n"
-        "To get started, please set the timezone for this server using the command:\n"
-        "`!settimezone <Timezone>`\n"
-        "Example: `!settimezone Europe/Stockholm`\n\n"
-        "Once the timezone is set, you can start a break using:\n"
-        "`!start HH:MM`\n"
-        "Example: `!start 14:30`\n\n"
-        "For more information on how to use the bot, type `!how`.\n"
-        "If you have any questions or need assistance, feel free to reach out on GitHub!\n"
-        "https://github.com/ReiGnboW86/breakbot"
-    )
-
     # Send the welcome message in the 'breakbot' channel
-    try:
-        await channel.send(welcome_message)
-    except discord.Forbidden:
-        print(f"Unable to send message in {channel.name} of guild {guild.name}")
-    except Exception as e:
-        print(f"An error occurred while sending message in {channel.name} of guild {guild.name}: {e}")
-
-def format_duration(duration_seconds):
-    if duration_seconds >= 3600:
-        hours, remainder = divmod(duration_seconds, 3600)
-        minutes, seconds = divmod(remainder, 60)
-        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-    else:
-        minutes, seconds = divmod(duration_seconds, 60)
-        return f"{minutes:02d}:{seconds:02d}"
-    
-def format_break_duration(seconds):
-    hours, remainder = divmod(seconds, 3600)
-    minutes = remainder // 60
-
-    if hours > 0 and minutes > 0:
-        return f"{hours} hour{'s' if hours !=1 else ''} and {minutes} minute{'s' if minutes !=1 else ''}"
-    elif hours > 0:
-        return f"{hours} hour{'s' if hours !=1 else ''}"
-    else:
-        return f"{minutes} minute{'s' if minutes !=1 else ''}"
+    await send_welcome_message(channel)
 
 async def countdown(ctx, session):
     try:
@@ -159,10 +174,7 @@ LUNCH_BREAK_TIME = 30 * 60  # 30 minutes in seconds
 @bot.command()
 @commands.has_permissions(manage_guild=True)
 async def start(ctx, end_time: str):
-    guild_id = ctx.guild.id
-    if guild_id not in sessions:
-        sessions[guild_id] = Session()
-    session = sessions[guild_id]
+    session = get_session(ctx)
 
     if session.is_active:
         await ctx.send("A break is already running.")
@@ -188,12 +200,11 @@ async def start(ctx, end_time: str):
 
         # Calculate the duration in minutes
         session.break_duration = int((session.end_time - now).total_seconds())
-        break_duration_formatted = format_break_duration(session.break_duration)
+        break_duration_formatted = format_human_readable_duration(session.break_duration)
 
+        special_message = ""
         if session.break_duration >= LUNCH_BREAK_TIME:
             special_message = "`LUNCH BREAK`\n"
-        else:
-            special_message = ""
 
         human_readable_time = now.strftime("%H:%M %Z")
         await ctx.send(
@@ -202,7 +213,7 @@ async def start(ctx, end_time: str):
             f"**Break started at:** {human_readable_time}\n"
             f"**Break duration:** {break_duration_formatted}\n"
             f"**Be back at:** {session.end_time.strftime('%H:%M %Z')}\n"
-        )       
+        )
         save_sessions()
 
         # Start the countdown
@@ -216,12 +227,11 @@ async def start(ctx, end_time: str):
 @bot.command()
 @commands.has_permissions(manage_guild=True)
 async def stop(ctx):
-    guild_id = ctx.guild.id
-    if guild_id not in sessions or not sessions[guild_id].is_active:
+    session = get_session(ctx)
+    if not session.is_active:
         await ctx.send("No break is currently active.")
         return
 
-    session = sessions[guild_id]
     session.is_active = False
     session.manually_ended = True
     end_time = datetime.now(session.timezone)
@@ -232,48 +242,19 @@ async def stop(ctx):
     session.last_break_end_time = end_time
     session.last_break_duration = int(duration)
 
-    # Convert duration to timedelta for easy breakdown
-    duration_timedelta = timedelta(seconds=int(duration))
-
-    # Extract hours, minutes, and seconds
-    hours, remainder = divmod(duration_timedelta.seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
-
-    # Create a human-readable duration message
-    duration_message = []
-    if hours > 0:
-        duration_message.append(f"{hours} hour{'s' if hours != 1 else ''}")
-    if minutes > 0:
-        duration_message.append(f"{minutes} minute{'s' if minutes != 1 else ''}")
-    if seconds > 0 or len(duration_message) == 0:
-        duration_message.append(f"{seconds} second{'s' if seconds != 1 else ''}")
-
-    human_readable_duration = ', '.join(duration_message)
+    human_readable_duration = format_human_readable_duration(duration)
 
     await ctx.send(f"Break manually stopped after: {human_readable_duration}")
     save_sessions()
 
 @bot.command()
 async def last(ctx):
-    guild_id = ctx.guild.id
-    if guild_id not in sessions or sessions[guild_id].last_break_end_time is None:
+    session = get_session(ctx)
+    if session.last_break_end_time is None:
         await ctx.send("No break has been registered yet.")
     else:
-        session = sessions[guild_id]
         end_time_str = session.last_break_end_time.strftime("%H:%M %Z")
-        duration_timedelta = timedelta(seconds=session.last_break_duration)
-        hours, remainder = divmod(duration_timedelta.seconds, 3600)
-        minutes, seconds = divmod(remainder, 60)
-
-        duration_message = []
-        if hours > 0:
-            duration_message.append(f"{hours} hour{'s' if hours != 1 else ''}")
-        if minutes > 0:
-            duration_message.append(f"{minutes} minute{'s' if minutes != 1 else ''}")
-        if seconds > 0 or len(duration_message) == 0:
-            duration_message.append(f"{seconds} second{'s' if seconds != 1 else ''}")
-
-        human_readable_duration = ', '.join(duration_message)
+        human_readable_duration = format_human_readable_duration(session.last_break_duration)
         await ctx.send(f"Previous break ended at: {end_time_str} and lasted for {human_readable_duration}.")
 
 @bot.command()
@@ -295,27 +276,23 @@ async def settimezone(ctx, *, timezone_name: str = None):
         await ctx.send("Please specify a timezone. Example usage: `!settimezone Europe/Stockholm`.")
         return
 
-    guild_id = ctx.guild.id
-    if guild_id not in sessions:
-        sessions[guild_id] = Session()
-
-    session = sessions[guild_id]
+    session = get_session(ctx)
 
     try:
         # Normalize the timezone name (strip whitespace)
         timezone_name = timezone_name.strip()
-        
+
         # Attempt to create a ZoneInfo object
         new_timezone = ZoneInfo(timezone_name)
-        
+
         # Get current timezone name
         current_timezone_name = session.timezone.key if session.timezone else "UTC"
-        
+
         # Check if the timezone is the same as the current one
         if timezone_name == current_timezone_name:
             await ctx.send(f"The timezone is already set to `{timezone_name}`.")
             return
-        
+
         # Update the timezone
         session.timezone = new_timezone
         save_sessions()
@@ -340,18 +317,16 @@ async def settimezone(ctx, *, timezone_name: str = None):
             "You can find a full list of timezones here: <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>"
         )
 
-from discord.ext import commands
+# Global check to restrict commands to #breakbot channel
+@bot.check
+async def globally_check_channel(ctx):
+    if ctx.channel.name != "breakbot":
+        raise WrongChannelError("Please use commands in the #breakbot channel.")
+    return True
 
 # Define custom exception
 class WrongChannelError(commands.CheckFailure):
     pass
-
-# Global check to restrict commands to #breakbot channel
-@bot.check
-async def globally_check_channel(ctx):
-    if ctx.channel.name != 'breakbot':
-        raise WrongChannelError(f"Please use commands in the #breakbot channel.")
-    return True
 
 # Error handling
 @bot.event
@@ -406,14 +381,5 @@ def load_sessions():
                     last_break_duration=session_data.get("last_break_duration", 0),
                     timezone=ZoneInfo(timezone_name)
                 )
-# Define custom exception
-class WrongChannelError(commands.CheckFailure):
-    pass
-
-@bot.check
-async def globally_check_channel(ctx):
-    if ctx.channel.name != 'breakbot':
-        raise WrongChannelError(f"Please use commands in the #breakbot channel.")
-    return True
 
 bot.run(BOT_TOKEN)
