@@ -14,6 +14,10 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 if BOT_TOKEN is None:
     raise ValueError("No BOT_TOKEN found in environment variables")
 
+OVERLORD_ID = int(os.getenv("OVERLORD_ID"))
+if OVERLORD_ID is None:
+    raise ValueError("No OVERLORD_ID found in enviroment variables")
+
 BREAK_MANAGER_ROLE_NAME = "Supreme Break Commander"  # The desired role name
 
 @dataclass
@@ -78,6 +82,7 @@ def get_welcome_message():
         "`!start HH:MM`\n"
         "Example: `!start 14:30`\n\n"
         f"Admins can assign the `{BREAK_MANAGER_ROLE_NAME}` role to users using `!promote @user`.\n"
+        f"Admins may also demote users using the `!demote @user` command.\n"
         "For more information on how to use the bot, type `!how`.\n"
         "If you have any questions or need assistance, feel free to reach out on GitHub!\n"
         "https://github.com/ReiGnboW86/breakbot"
@@ -295,15 +300,30 @@ async def last(ctx):
         await ctx.send(f"Previous break ended at: {end_time_str} and lasted for {human_readable_duration}.")
 
 @bot.command()
+async def role(ctx):
+    user_id = ctx.author.id
+
+    # Check for who the Overlord is
+    if user_id == OVERLORD_ID:
+        await ctx.send(f"{ctx.author.mention}, you are the almighty Overlord, all others pale in your presence. You own the table.")
+    
+    elif discord.utils.get(ctx.author.roles, name=BREAK_MANAGER_ROLE_NAME):
+        await ctx.send(f"{ctx.author.mention}, you are a Supreme Break Commander (most of them are named Amanda). At dining parties, you get to sit at the head of table.")
+
+    else:
+        await ctx.send(f"{ctx.author.mention}, you are merely a peon in this world. At dining parties, you get to watch people eating at the tables. ") 
+
+@bot.command()
 async def how(ctx):
     how_to_message = f"""
     **Break Bot Commands:**
     `!start HH:MM` - Starts a break until the specified end time (24-hour format).
     `!stop` - Stops the current break.
-    `!last` - Displays information about the last break.
+    `!last` - Displays information about the last break. (available to all Users)
     `!settimezone <Timezone>` - Sets the timezone for the server (admin or users with the '{BREAK_MANAGER_ROLE_NAME}' role).
     `!promote @user` - Assigns the '{BREAK_MANAGER_ROLE_NAME}' role to a user (admin only).
     `!demote @user` - Removes the '{BREAK_MANAGER_ROLE_NAME}' role from a user (admin only).
+    `!role` - Checks your role in the hierarchy of the breakbot world.
     `!how`  - Shows this message.
 
     **Note:** Users with the role `{BREAK_MANAGER_ROLE_NAME}` or administrators can control the bot.
