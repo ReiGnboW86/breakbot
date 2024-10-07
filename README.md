@@ -63,14 +63,18 @@ Example: !promote @Amanda
 
 Removes the targeted user from its role as a Supreme Break Commander, demoting them to a regular human being again.
 
+# !role
+
+Displays some fun information about which your role in the breakbot world is.
+
+Example: !role
+
 # Latest Updates
 
-Rewrote alot of the code, optimizing it. Requires more testing to make sure all functions are working as intended now.
-Added the !setcommander @username command to be able to assign Break Operators other than the admin
+Added the !promote @username & !demote @username command to be able to assign Break Operators other than the admin
+Added a fun little !role message to check which role you have
 
 # Current thoughts
-
-Add a custom role for Amanda to control the bot aswell (Supreme Break Commander) (Implemented)
 
 Ask for input from the user if the break is over 30 minutes to confirm its a lunch break or not, otherwise default to normal break
 
