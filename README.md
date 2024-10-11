@@ -20,12 +20,13 @@ None I've found atm (please report if you find any)
 
 # COMMANDS (implemented)
 
-# !start HH:MM
+# !start HH:MM break or task (or blank to default to break)
 
-Starts a countdown for a break. The # specifies how long the break should last.
+Starts a countdown for a break or task. The HH:MM specifies how long the break should last.
 The bot will send a message saying when the break starts and how long it will last, and will send warnings when there are 2 minutes and 30 seconds remaining.
 
 Example: !start 14:20 Starts a break that will end @ 14:20 and displays a timer counting down and approximate time in minutes of the break.
+Example 2: !start 14:20 task Starts a task that will end @ 14:20 and displays a timer
 
 # !stop
 
@@ -33,7 +34,6 @@ Stops the current break timer.
 This command allows you to cancel the break and send a message that the break was stopped after x time.
 
 Example: !stop
-
 
 # !last
 
@@ -53,11 +53,14 @@ Sets the timezone to whatever timezone you want the bot to operate in, and store
 
 Example: !settimezone Europe/Stockholm
 
-# !promote @username
+# !promote @username *
 
-Sets the targeted user to be a Supreme Break Commander, giving them the rights to use the !start, !stop and !settimezone commands.
+Sets the targeted user to be a Supreme Break Commander or Assistant to the Supreme Break COmmander, giving them the rights to use the !start, !stop and !settimezone commands.
 
-Example: !promote @Amanda
+Example: !promote @Amanda 1
+"Sets Supreme Break Commander role"
+Example 2: !promote @Amanda 2
+"Sets Assistant to the Supreme Break Commander role"
 
 # !demote @username
 
@@ -76,12 +79,14 @@ Added a fun little !role message to check which role you have
 
 # Current thoughts
 
-Ask for input from the user if the break is over 30 minutes to confirm its a lunch break or not, otherwise default to normal break
+Ask for input from the user if the break is over 30 minutes to confirm its a lunch break or not, otherwise default to normal break (IMPLEMENTED)
 
-Add the possibility to choose between a task or a break when starting a timer (taskbot?!)
+Add sound effects to different breakpoints in the breaks (2 min, 30 second, start) (Work in progress)
 
-Add some fun emojis to the messages to make it look more playful
+Add the possibility to opt out of the sound effects, for all users (Future feature TTS maybe)
 
-Fix so that the bot doesn't require admin priviliges (Next Week perhaps)
+Add the possibility to choose between a task or a break when starting a timer (IMPLEMENTED)
+
+Add some fun emojis to the messages to make it look more playful (SEMI-IMPLEMENTED)
 
 If you have any suggestions for functionality you would like to see, Please send me a message :)
