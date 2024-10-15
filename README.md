@@ -83,6 +83,10 @@ Ask for input from the user if the break is over 30 minutes to confirm its a lun
 
 Add sound effects to different breakpoints in the breaks (2 min, 30 second, start) (Work in progress)
 
+Add the ability to extend a break or a task that is already ongoing (Feature request)
+
+Fix bug with role hierarchy linked to assistant (works on some servers, some not)
+
 Add the possibility to opt out of the sound effects, for all users (Future feature TTS maybe)
 
 Add the possibility to choose between a task or a break when starting a timer (IMPLEMENTED)
